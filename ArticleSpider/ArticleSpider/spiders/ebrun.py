@@ -1,5 +1,7 @@
 import scrapy
 
+from ArticleSpider.items import EbRunArticleItem
+
 
 class EbrunSpider(scrapy.Spider):
     name = 'ebrun'
@@ -18,16 +20,15 @@ class EbrunSpider(scrapy.Spider):
             img = img_url[a]
             yield scrapy.Request(url, callback=self.article_details, meta={"img": img})
 
-
     def article_details(self, response):
+        item = EbRunArticleItem()
 
-        img_url = response.meta.get("img", "")
+        item["img_url"] = response.meta.get("img", "")
+        item["title"] = response.xpath('//h1/text()').extract()[0]
+        item["author"] = response.xpath('//p[@class="info"]/span[1]/text()').extract()[0].split("：")[1]
+        item["media"] = response.xpath('//p[@class="info"]/span[2]/text()').extract()[0].split("：")[1]
+        item["pubdate"] = response.xpath('//p[@class="date-time"]/text()').extract()[0]
+        item["tag"] = " ".join(response.xpath('//dd/a/text()').extract())
+        item["content"] = response.xpath('//div[@class="post-text"]').extract()[0]
 
-        title = response.xpath('//h1/text()').extract()[0]
-        author = response.xpath('//p[@class="info"]/span[1]/text()').extract()[0].split("：")[1]
-        media = response.xpath('//p[@class="info"]/span[2]/text()').extract()[0].split("：")[1]
-        pubdate = response.xpath('//p[@class="date-time"]/text()').extract()[0]
-        tag = " ".join(response.xpath('//dd/a/text()').extract())
-        content = response.xpath('//div[@class="post-text"]').extract()[0]
-
-        print(title, content)
+        yield item
